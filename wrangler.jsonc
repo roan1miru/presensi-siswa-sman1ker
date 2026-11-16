@@ -1,0 +1,37 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "presensi-siswa-sman1ker",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    // /api/* dan /sw.js diproses Worker (sw.js diberi nomor versi deploy otomatis).
+    "run_worker_first": ["/api/*", "/sw.js"],
+    "not_found_handling": "single-page-application"
+  },
+  // Database utama. Sengaja TANPA database_id: saat deploy pertama Wrangler membuat database
+  // "presensi-db" di akun Anda secara otomatis (atau memakai yang sudah ada dengan nama itu).
+  // Tabel dibuat sendiri oleh Worker (src/lib/migrate.js), jadi tidak perlu perintah migrasi.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "presensi-db",
+      "migrations_dir": "migrations","database_id": "ce493c92-8d3b-4a0b-baae-1a244acfa552"
+    }
+  ],
+  // Penyimpanan kunci sistem, terpisah dari database agar backup database tidak memuat kunci
+  // pengaman password. TANPA id: dibuat otomatis oleh Wrangler saat deploy pertama.
+  "kv_namespaces": [
+    { "binding": "KEYS","id": "5e90464300eb43839fd9db0b60762fff" }
+  ],
+  // File .sql dimuat sebagai teks untuk migrasi otomatis.
+  "rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": true }],
+  // Nomor versi deploy, dipakai service worker untuk memperbarui cache HP siswa otomatis.
+  "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  "triggers": {
+    // 17.00 UTC = 00.00 WIB: pembersihan sesi/token kedaluwarsa
+    "crons": ["0 17 * * *"]
+  },
+  "observability": { "enabled": true }
+}

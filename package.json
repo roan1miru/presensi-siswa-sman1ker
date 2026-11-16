@@ -1,0 +1,35 @@
+{
+  "name": "presensi-siswa-sman1ker",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Presensi siswa berbasis GPS + wajah lokal — Cloudflare Workers + D1",
+  "cloudflare": {
+    "label": "Presensi Siswa",
+    "products": [
+      "Workers",
+      "D1",
+      "KV"
+    ],
+    "bindings": {
+      "SETUP_CODE": {
+        "description": "Kata rahasia pilihan Anda sendiri (**minimal 10 karakter**, misalnya `kopi-pagi-di-kerjo-2026`). Catat baik-baik: kode ini diminta **sekali** di halaman instalasi untuk membuat akun admin pertama, sehingga orang lain yang menemukan alamat aplikasi tidak bisa mendahului Anda."
+      },
+      "DB": {
+        "description": "Database presensi. Dibuat otomatis; biarkan nama bawaan."
+      },
+      "KEYS": {
+        "description": "Penyimpanan kunci sistem. Dibuat otomatis; tidak perlu diisi."
+      }
+    }
+  },
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "test:smoke": "node test/smoke.mjs",
+    "demo:local": "node scripts/demo-data.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "4.162.0"
+  }
+}
