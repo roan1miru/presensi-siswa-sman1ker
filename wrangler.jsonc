@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "presensi-siswa-sman1ker",
+  "name": "presensi-siswa",
   "main": "src/index.js",
   "compatibility_date": "2026-11-01",
   "assets": {
@@ -17,13 +17,13 @@
     {
       "binding": "DB",
       "database_name": "presensi-db",
-      "migrations_dir": "migrations","database_id": "ce493c92-8d3b-4a0b-baae-1a244acfa552"
+      "migrations_dir": "migrations"
     }
   ],
   // Penyimpanan kunci sistem, terpisah dari database agar backup database tidak memuat kunci
   // pengaman password. TANPA id: dibuat otomatis oleh Wrangler saat deploy pertama.
   "kv_namespaces": [
-    { "binding": "KEYS","id": "5e90464300eb43839fd9db0b60762fff" }
+    { "binding": "KEYS" }
   ],
   // File .sql dimuat sebagai teks untuk migrasi otomatis.
   "rules": [{ "type": "Text", "globs": ["**/*.sql"], "fallthrough": true }],

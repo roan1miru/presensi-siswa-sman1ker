@@ -89,7 +89,7 @@ export async function listStudents(request, env) {
   }
   const { results } = await env.DB.prepare(
     `SELECT u.id, u.username, u.nis, u.name, u.class_id, c.name AS class_name, u.is_default_password,
-            u.active, u.locked_until, u.last_login_at, f.enrolled_at AS face_enrolled_at
+            u.active, u.locked_until, u.last_login_at, f.enrolled_at AS face_enrolled_at, f.source AS face_source
        FROM users u
        LEFT JOIN classes c ON c.id = u.class_id
        LEFT JOIN face_profiles f ON f.student_id = u.id

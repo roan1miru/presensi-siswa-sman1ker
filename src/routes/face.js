@@ -47,6 +47,7 @@ export async function enroll(request, env) {
   if (!Array.isArray(b.samples) || b.samples.length < 3 || b.samples.length > 8) {
     throw new HttpError(400, 'invalid_samples', 'Diperlukan 3–8 sampel wajah.');
   }
+  const source = b.source === 'photo' ? 'photo' : 'camera';
   const samples = b.samples.map(parseDescriptor);
   if (samples.some((s) => !s)) throw new HttpError(400, 'invalid_samples', 'Data wajah tidak valid.');
 
@@ -68,11 +69,11 @@ export async function enroll(request, env) {
   const now = Date.now();
   await env.DB.batch([
     env.DB.prepare(
-      `INSERT INTO face_profiles (student_id, embedding, model_id, samples, enrolled_at, enrolled_by) VALUES (?, ?, ?, ?, ?, ?)
+      `INSERT INTO face_profiles (student_id, embedding, model_id, samples, enrolled_at, enrolled_by, source) VALUES (?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(student_id) DO UPDATE SET embedding = excluded.embedding, model_id = excluded.model_id,
-         samples = excluded.samples, enrolled_at = excluded.enrolled_at, enrolled_by = excluded.enrolled_by`,
-    ).bind(student.id, mean.buffer, MODEL_ID, samples.length, now, user.id),
-    auditStmt(env, user.id, 'face_enroll', student.id, { samples: samples.length, spread: Number(spread.toFixed(3)) }),
+         samples = excluded.samples, enrolled_at = excluded.enrolled_at, enrolled_by = excluded.enrolled_by, source = excluded.source`,
+    ).bind(student.id, mean.buffer, MODEL_ID, samples.length, now, user.id, source),
+    auditStmt(env, user.id, 'face_enroll', student.id, { samples: samples.length, spread: Number(spread.toFixed(3)), source }),
   ]);
   return json({ enrolled_at: now, quality: Number((1 - spread).toFixed(2)) });
 }

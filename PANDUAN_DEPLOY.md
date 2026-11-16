@@ -147,8 +147,54 @@ Ikuti urutan di halaman **Hari ini** dalam aplikasi:
 1. **Pengaturan**: isi titik lokasi sekolah (tombol "Isi dengan lokasi saya sekarang" saat Anda berada di tengah sekolah), radius, dan daftar IP Wi-Fi sekolah.
 2. **Impor siswa**: unggah CSV dari Excel dengan kolom `nis;nama;kelas`. Username siswa otomatis `s` + NIS, password awal = NIS.
 3. **Akun guru**: buat akun wali kelas, lalu cetak kartunya. Buat juga **satu superadmin cadangan** agar akses tidak hilang bila Anda lupa password.
-4. **Data wajah**: daftarkan wajah siswa per kelas bersama wali kelas.
+4. **Data wajah**: dari foto kartu pelajar (lihat bagian *Data wajah dari foto* di bawah), atau dengan kamera per kelas bersama wali kelas.
 5. **Jadwal**: buat jadwal Masuk dan Pulang (rutin Senin–Jumat).
+
+---
+
+## Data wajah dari foto kartu pelajar
+
+Cara tercepat untuk satu sekolah. Foto **hanya dibaca di browser** komputer yang dipakai. Yang dikirim ke server hanya angka hasil olahan wajah, bukan fotonya.
+
+1. Kumpulkan foto siswa dalam satu folder di laptop. Beri **nama file sesuai NIS**, misalnya `2425001.jpg`. Nama seperti `2425001 - Ahmad.jpg` atau `s2425001.jpg` juga dikenali.
+2. Satu foto satu siswa, wajah menghadap depan, format JPG atau PNG, minimal sekitar 300 piksel. Foto dari iPhone (HEIC) perlu diubah ke JPG dulu.
+3. Di aplikasi, buka **Data wajah**, klik **Impor dari foto**, lalu **Pilih folder foto**.
+4. Periksa ringkasan (berapa foto yang cocok dengan NIS), lalu klik **Mulai impor**. Jangan tutup halaman selama proses berjalan. Sebagai gambaran, 864 foto di laptop biasa butuh sekitar 10–20 menit.
+5. Di akhir muncul daftar foto yang gagal beserta alasannya (wajah tidak terdeteksi, lebih dari satu wajah, terlalu kecil). Daftar ini bisa diunduh. Siswa yang gagal bisa didaftarkan dengan kamera, atau fotonya diganti lalu diimpor lagi.
+
+**Perlu diketahui:** kecocokan wajah bergantung pada kualitas dan umur foto. Foto kartu pelajar kelas X bisa berbeda dengan wajah siswa kelas XII. Di tabel Data wajah tertulis asal datanya (**Dari foto** atau **Dari kamera**). Bila seorang siswa sering ditolak saat presensi (terlihat di Rekap → Percobaan ditolak, alasan "Wajah tidak cocok"), daftarkan ulang siswa itu dengan kamera.
+
+---
+
+## Mengganti alamat aplikasi
+
+Alamat aplikasi terdiri dari dua bagian: `NAMA-APLIKASI.SUBDOMAIN-AKUN.workers.dev`. Contoh: `presensi-siswa-sman1ker.namagithub.workers.dev`.
+
+### Cara 1 — Ganti subdomain akun (gratis, 1 menit, data aman)
+
+1. Di https://dash.cloudflare.com, buka **Workers & Pages**.
+2. Klik **Change** di samping **Your subdomain** (bisa juga lewat tab **Domains** pada aplikasi).
+3. Ketik nama baru, misalnya `sman1kerjo`, lalu simpan. Nama ini harus unik di seluruh Cloudflare.
+
+Hasilnya: `presensi-siswa-sman1ker.sman1kerjo.workers.dev`. Alamat lama langsung tidak berlaku, jadi lakukan **sebelum** alamat dibagikan ke siswa. Pengguna yang sudah masuk perlu masuk ulang.
+
+### Cara 2 — Ganti nama aplikasi (bagian depan)
+
+Nama bagian depan berasal dari nama proyek yang diisi saat deploy. Mengganti nama aplikasi yang sudah berjalan **tidak disarankan**, karena penyimpanan kunci sistem ikut terikat pada nama itu. Selagi data masih sedikit, cara paling aman:
+
+1. Di aplikasi lama: **Pengaturan → Unduh backup sekarang**.
+2. Ikuti **Langkah 0** (hapus aplikasi lama), lalu **Langkah 3–6** dengan nama proyek pendek, misalnya `presensi`.
+3. Di aplikasi baru: **Pengaturan → Pulihkan dari file backup**. Password siswa otomatis kembali ke NIS.
+
+Digabung dengan Cara 1, hasilnya misalnya `presensi.sman1kerjo.workers.dev`.
+
+### Cara 3 — Domain sekolah sendiri (misalnya `presensi.sman1kerjo.sch.id`)
+
+Bisa, bila domain sekolah **dikelola lewat Cloudflare**: domain ditambahkan ke Cloudflare (paket Free) dengan mengganti nameserver di tempat domain terdaftar. Setelah itu buka aplikasi → tab **Domains** → tambahkan domain kustom. Langkah ini perlu dikoordinasikan dengan pengelola domain sekolah atau dinas, karena memindahkan nameserver memengaruhi seluruh situs dan email sekolah. Alternatifnya, beli domain murah khusus aplikasi (misalnya `.my.id`).
+
+### Cara 4 — Tautan pendek dan QR (gratis, tanpa mengubah apa pun)
+
+Buat tautan pendek di layanan seperti s.id, misalnya `s.id/presensi-sman1kerjo`, lalu cetak kode QR-nya di kelas. Siswa cukup membuka sekali, lalu memasang aplikasi ke layar utama HP (menu Akun → Pasang di layar utama). Setelah itu mereka tidak perlu mengetik alamat lagi.
 
 ---
 

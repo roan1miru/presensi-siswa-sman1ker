@@ -172,3 +172,90 @@ export const ovalOverlay = `<svg class="oval" viewBox="0 0 300 400" preserveAspe
   <rect class="mask" width="300" height="400" mask="url(#oval-cut)"/>
   <ellipse class="guide" cx="150" cy="190" rx="98" ry="130"/>
 </svg>`;
+
+// ───── Pendaftaran dari foto (mis. foto kartu pelajar) ─────
+// Foto hanya dibaca di browser ini; yang dikirim ke server hanya descriptor angka.
+const round = (d) => Array.from(d, (x) => Math.round(x * 1e6) / 1e6);
+
+function canvasOf(w, h) {
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(w));
+  c.height = Math.max(1, Math.round(h));
+  return c;
+}
+function wipe(...canvases) {
+  for (const c of canvases) {
+    if (!c) continue;
+    c.getContext('2d').clearRect(0, 0, c.width, c.height);
+    c.width = c.height = 0;
+  }
+}
+
+/**
+ * Membaca satu file foto → { samples: [3 descriptor] } atau { error: kode, message }.
+ * Sampel: foto asli, versi dicerminkan, dan potongan dekat wajah (memberi variasi seperti
+ * beberapa jepretan kamera). Mengembalikan error bila tidak ada wajah / wajah terlalu kecil.
+ */
+export async function descriptorsFromPhoto(file) {
+  if (!/^image\/(jpeg|png|webp|bmp|gif)$/.test(file.type) && !/\.(jpe?g|png|webp|bmp)$/i.test(file.name)) {
+    return { error: 'format', message: 'Format tidak didukung (pakai JPG atau PNG).' };
+  }
+  let bmp;
+  try {
+    bmp = await createImageBitmap(file);
+  } catch {
+    return { error: 'format', message: 'Foto tidak bisa dibaca (rusak atau format HEIC).' };
+  }
+  const scale = Math.min(1, 900 / Math.max(bmp.width, bmp.height));
+  const base = canvasOf(bmp.width * scale, bmp.height * scale);
+  base.getContext('2d').drawImage(bmp, 0, 0, base.width, base.height);
+  bmp.close();
+  let mirror = null, crop = null;
+  try {
+    const opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.4 });
+    const all = await faceapi.detectAllFaces(base, opts).withFaceLandmarks().withFaceDescriptors();
+    if (!all.length) return { error: 'no_face', message: 'Wajah tidak ditemukan di foto.' };
+    all.sort((a, b) => b.detection.box.area - a.detection.box.area);
+    if (all.length > 1 && all[1].detection.box.area > all[0].detection.box.area * 0.35) {
+      return { error: 'multi_face', message: 'Ada lebih dari satu wajah di foto.' };
+    }
+    const main = all[0];
+    const box = main.detection.box;
+    if (box.width < 70) return { error: 'too_small', message: 'Wajah di foto terlalu kecil atau buram (pakai foto minimal 300 piksel).' };
+    const samples = [round(main.descriptor)];
+
+    mirror = canvasOf(base.width, base.height);
+    const mctx = mirror.getContext('2d');
+    mctx.translate(base.width, 0);
+    mctx.scale(-1, 1);
+    mctx.drawImage(base, 0, 0);
+    const m = await faceapi.detectSingleFace(mirror, opts).withFaceLandmarks().withFaceDescriptor();
+    if (m) samples.push(round(m.descriptor));
+
+    const pad = box.width * 0.45;
+    const x = Math.max(0, box.x - pad), y = Math.max(0, box.y - pad * 1.2);
+    const w = Math.min(base.width - x, box.width + pad * 2), h = Math.min(base.height - y, box.height + pad * 2.2);
+    const k = 480 / Math.max(w, h);
+    crop = canvasOf(w * k, h * k);
+    crop.getContext('2d').drawImage(base, x, y, w, h, 0, 0, crop.width, crop.height);
+    const c = await faceapi.detectSingleFace(crop, opts).withFaceLandmarks().withFaceDescriptor();
+    if (c) samples.push(round(c.descriptor));
+
+    while (samples.length < 3) samples.push(samples[0]);
+    return { samples, score: main.detection.score };
+  } finally {
+    wipe(base, mirror, crop);
+  }
+}
+
+/** Mencari NIS di nama file: "2425001.jpg", "s2425001.png", "2425001 - Ahmad.jpg". */
+export function nisFromFilename(name, knownNis) {
+  const stem = name.replace(/\.[^.]+$/, '');
+  if (knownNis.has(stem)) return stem;
+  const candidates = stem.match(/[0-9A-Za-z]{3,20}/g) || [];
+  for (const c of candidates) {
+    if (knownNis.has(c)) return c;
+    if (/^s/i.test(c) && knownNis.has(c.slice(1))) return c.slice(1);
+  }
+  return null;
+}
